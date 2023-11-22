@@ -1,0 +1,46 @@
+{
+  "api": {
+    "nextamplified": {
+      "dependsOn": [],
+      "output": {
+        "authConfig": {
+          "additionalAuthenticationProviders": [],
+          "defaultAuthentication": {
+            "apiKeyConfig": {
+              "apiKeyExpirationDays": 7
+            },
+            "authenticationType": "API_KEY"
+          }
+        }
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync"
+    }
+  },
+  "function": {
+    "nextamplified7e5005d2": {
+      "build": true,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_nextamplified7e5005d2_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "nextamplified7e5005d2"
+        }
+      ]
+    },
+    "AMPLIFY_function_nextamplified7e5005d2_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "nextamplified7e5005d2"
+        }
+      ]
+    }
+  }
+}
