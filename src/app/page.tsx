@@ -64,7 +64,7 @@ async function createBook(formData: FormData) {
       }
     }
   });
-  console.log("Created Room: ", data?.createBook )
+  console.log("Created Book: ", data?.createBook )
   revalidatePath('/');
 }
 
@@ -78,7 +78,7 @@ async function deleteBook(formData: FormData) {
       }
     }
   });
-  console.log("Created Room: ", data?.deleteBook )
+  console.log("Delete Book: ", data?.deleteBook )
   revalidatePath('/');
 }
 
@@ -90,13 +90,10 @@ export default async function Home() {
   });
   const listBooks = data.listBooks.items;
 
-  const createSub = client
-  .graphql({ query: subscriptions.onCreateBook })
-  .subscribe({
-    next: ({ data }) => console.log(data),
-    error: (error) => console.warn(error)
-  });
-  
+  // client.graphql({ query: subscriptions.onDeleteBook }).subscribe({
+  //   next: ({ data }) => {const show = '<h1> Subscriptions Success </h1>';},
+  //   error: (error) => console.warn(error)
+  // });
 
   return (
     <main className=" min-h-screen p-24">
@@ -116,6 +113,7 @@ export default async function Home() {
           <th>Start Time</th>
           <th>End Time</th>
           <th>Remark</th>
+          <th>--Delete(Mutation)</th>
         </tr>
         {listBooks.map((listBook) => {
           return (
@@ -127,6 +125,11 @@ export default async function Home() {
               <td style={{ listStyle: 'none' }}>{listBook.datetime_in}</td>
               <td style={{ listStyle: 'none' }}>{listBook.datetime_out}</td>
               <td style={{ listStyle: 'none' }}>{listBook.remark}</td>
+              <td>
+                <form action={deleteBook}>
+                  <button type="submit" name="id" value={listBook.id} >ลบ</button>
+                </form>
+              </td>
             </tr>
           );
         })}
@@ -160,13 +163,6 @@ export default async function Home() {
         remark<input name="remark" />
         <button type="submit"> เพิ่ม</button>
       </form> <br />
-
-      <form action={deleteBook}>
-        ลบ Book
-        id<input name="id" />
-        <button type="submit">ลบ</button>
-      </form>
-      <br />
       <h1>--- Subscription ---</h1>
 
     </main>
