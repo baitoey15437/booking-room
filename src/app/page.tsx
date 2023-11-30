@@ -51,20 +51,31 @@ async function createRoom(formData: FormData) {
 
 async function createBook(formData: FormData) {
   "use server"
-  const { data } = await cookiesClient.graphql({
-    query: mutations.createBook,
-    variables: {
-      input: {
-        book_id: formData.get('book_id')?.toString() ?? '',
-        user_id: formData.get('user_id')?.toString() ?? '',
-        room_id: formData.get('room_id')?.toString() ?? '',
-        datetime_in: formData.get('datetime_in')?.toString() ?? '',
-        datetime_out: formData.get('datetime_out')?.toString() ?? '',
-        remark: formData.get('remark')?.toString() ?? ''
-      }
-    }
-  });
-  console.log("Created Book: ", data?.createBook )
+  const date_start : any = formData.get('datetime_in')?.toString()
+  const date_end : any = formData.get('datetime_out')?.toString()
+
+  console.log(date_start);
+
+  const datetime_in = new Date(date_start);
+  const datetime_out = new Date(date_end);
+
+  console.log(datetime_in);
+  console.log(datetime_out);
+
+  // const { data } = await cookiesClient.graphql({
+  //   query: mutations.createBook,
+  //   variables: {
+  //     input: {
+  //       book_id: formData.get('book_id')?.toString() ?? '',
+  //       user_id: formData.get('user_id')?.toString() ?? '',
+  //       room_id: formData.get('room_id')?.toString() ?? '',
+  //       datetime_in: datetime_in ?? null,
+  //       datetime_out: datetime_out ?? null,
+  //       remark: formData.get('remark')?.toString() ?? ''
+  //     }
+  //   }
+  // });
+  // console.log("Created Book: ", data?.createBook )
   revalidatePath('/');
 }
 
@@ -82,6 +93,12 @@ async function deleteBook(formData: FormData) {
   revalidatePath('/');
 }
 
+function getDateTime(str : any) {
+  const dt = new Date(str);
+  const date_time = dt.toLocaleString('en-GB')
+  return date_time
+}
+
 
 export default async function Home() {
 
@@ -90,16 +107,27 @@ export default async function Home() {
   });
   const listBooks = data.listBooks.items;
 
+  // var a:number = 1;
+  // console.log('aa1 = ' + a)
+
+  // var a = a + 1;
+  // console.log('aa4 = ' + a)
+
   // client.graphql({ query: subscriptions.onDeleteBook }).subscribe({
-  //   next: ({ data }) => {const show = '<h1> Subscriptions Success </h1>';},
+  //   next: ({ data }) => {
+  //     var a:number = a + 1;
+  //     console.log('aa2 = ' + a);
+  //   },
   //   error: (error) => console.warn(error)
   // });
+  
+  // console.log('aa3 = ' + a)
 
   return (
     <main className=" min-h-screen p-24">
       {(!listBooks || listBooks.length === 0 || errors) && (
         <div>
-          <p>No todos, please add one.</p>
+          <p>No Booking, please add one.</p>
         </div>
       )}
     <h1>--- Query ---</h1>
@@ -113,21 +141,21 @@ export default async function Home() {
           <th>Start Time</th>
           <th>End Time</th>
           <th>Remark</th>
-          <th>--Delete(Mutation)</th>
+          <th></th>
         </tr>
         {listBooks.map((listBook) => {
           return (
             <tr>
-              <td style={{ listStyle: 'none' }}>{listBook.id}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.book_id}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.user_id}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.room_id}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.datetime_in}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.datetime_out}</td>
-              <td style={{ listStyle: 'none' }}>{listBook.remark}</td>
+              <td>{listBook.id}</td>
+              <td>{listBook.book_id}</td>
+              <td>{listBook.user_id}</td>
+              <td>{listBook.room_id}</td>
+              <td>{getDateTime(listBook.datetime_in)}</td>
+              <td>{getDateTime(listBook.datetime_out)}</td>
+              <td>{listBook.remark}</td>
               <td>
                 <form action={deleteBook}>
-                  <button type="submit" name="id" value={listBook.id} >ลบ</button>
+                  <button type="submit" name="id" value={listBook.id} >delete</button>
                 </form>
               </td>
             </tr>
@@ -164,7 +192,12 @@ export default async function Home() {
         <button type="submit"> เพิ่ม</button>
       </form> <br />
       <h1>--- Subscription ---</h1>
-
+      {
+        // a == 'true'
+        // ? 'Subscriptions Success'
+        // : 'NO Subscriptions!'
+      }
+    
     </main>
   )
 }

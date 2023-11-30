@@ -26,7 +26,7 @@ type book @model {
   book_id: ID!
   user_id: ID! @index(name: "byuser")
   room_id: ID! @index(name: "byroom")
-  datetime_in: String
-  datetime_out: String
+  datetime_in: AWSDateTime
+  datetime_out: AWSDateTime
   remark: String
 }
