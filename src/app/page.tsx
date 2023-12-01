@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import * as queries from '@/graphql/queries';
 import * as mutations from '@/graphql/mutations';
 import * as subscriptions from '@/graphql/subscriptions';
+import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 
 const client = generateClient();
 Amplify.configure(awsconfig);
@@ -16,6 +17,21 @@ export const cookiesClient = generateServerClientUsingCookies({
   config,
   cookies
 });
+
+const invoke = async (funcName : any, payload : any) => {
+  "use server"
+  const client = new LambdaClient({});
+  const command = new InvokeCommand({
+    FunctionName: funcName,
+    Payload: JSON.stringify(payload),
+    LogType: LogType.Tail,
+  });
+  const { Payload, LogResult } = await client.send(command);
+  const result = Buffer.from(Payload).toString();
+  const logs = Buffer.from(LogResult, "base64").toString();
+  return { logs, result };
+};
+/** snippet-end:[javascript.v3.lambda.actions.Invoke] */
 
 async function createUser(formData: FormData) {
   "use server"
@@ -51,31 +67,28 @@ async function createRoom(formData: FormData) {
 
 async function createBook(formData: FormData) {
   "use server"
+  //convert date 30/11/2023T13:00 to 2023-11-30T06:00:00.000Z
   const date_start : any = formData.get('datetime_in')?.toString()
   const date_end : any = formData.get('datetime_out')?.toString()
-
-  console.log(date_start);
-
   const datetime_in = new Date(date_start);
   const datetime_out = new Date(date_end);
 
-  console.log(datetime_in);
-  console.log(datetime_out);
 
-  // const { data } = await cookiesClient.graphql({
-  //   query: mutations.createBook,
-  //   variables: {
-  //     input: {
-  //       book_id: formData.get('book_id')?.toString() ?? '',
-  //       user_id: formData.get('user_id')?.toString() ?? '',
-  //       room_id: formData.get('room_id')?.toString() ?? '',
-  //       datetime_in: datetime_in ?? null,
-  //       datetime_out: datetime_out ?? null,
-  //       remark: formData.get('remark')?.toString() ?? ''
-  //     }
-  //   }
-  // });
-  // console.log("Created Book: ", data?.createBook )
+
+  const { data } = await cookiesClient.graphql({
+    query: mutations.createBook,
+    variables: {
+      input: {
+        book_id: formData.get('book_id')?.toString() ?? '',
+        user_id: formData.get('user_id')?.toString() ?? '',
+        room_id: formData.get('room_id')?.toString() ?? '',
+        datetime_in: datetime_in ?? null,
+        datetime_out: datetime_out ?? null,
+        remark: formData.get('remark')?.toString() ?? ''
+      }
+    }
+  });
+  console.log("Created Book: ", data?.createBook )
   revalidatePath('/');
 }
 
@@ -93,12 +106,29 @@ async function deleteBook(formData: FormData) {
   revalidatePath('/');
 }
 
-function getDateTime(str : any) {
-  const dt = new Date(str);
-  const date_time = dt.toLocaleString('en-GB')
+const getDateTime = (str : any) => {
+  //convert date 2023-11-30T06:00:00.000Z to 30/11/2023, 13:00:00
+  const dt = new Date(str); //any to date
+  const date_time = dt.toLocaleString('en-GB')// 24 hr.
   return date_time
 }
 
+
+const QueryRoomAvailable = async (formData: FormData) => {
+  "use server"
+  const date_start : any = formData.get('datetime_in')?.toString()
+  const date_end : any = formData.get('datetime_out')?.toString()
+  const datetime_in = new Date(date_start);
+  const datetime_out = new Date(date_end);
+  const funcName = 'nextamplifiedquerybook-dev';
+  const payload = {
+    "key1": datetime_in,
+    "key2": datetime_out
+  };
+  const data = (await invoke(funcName,payload)).result;
+  console.log(data);
+  //return data
+}
 
 export default async function Home() {
 
@@ -107,21 +137,10 @@ export default async function Home() {
   });
   const listBooks = data.listBooks.items;
 
-  // var a:number = 1;
-  // console.log('aa1 = ' + a)
-
-  // var a = a + 1;
-  // console.log('aa4 = ' + a)
-
   // client.graphql({ query: subscriptions.onDeleteBook }).subscribe({
-  //   next: ({ data }) => {
-  //     var a:number = a + 1;
-  //     console.log('aa2 = ' + a);
-  //   },
+  //   next: ({ data }) => { console.log('Subscriptions Succes')},
   //   error: (error) => console.warn(error)
   // });
-  
-  // console.log('aa3 = ' + a)
 
   return (
     <main className=" min-h-screen p-24">
@@ -165,7 +184,7 @@ export default async function Home() {
     </table>
 <br />
 <h1>--- Mutation ---</h1>
-      <form action={createUser}>
+      {/* <form action={createUser}>
         createUser <br />
         id<input name="user_id" /> <br />
         name<input name="user_name" /> <br />
@@ -179,7 +198,7 @@ export default async function Home() {
         name<input name="room_name" /> <br />
         description<input name="description" />
         <button type="submit"> เพิ่ม</button>
-      </form><br />
+      </form><br /> */}
 
       <form action={createBook}>
       createBook <br />
@@ -191,13 +210,20 @@ export default async function Home() {
         remark<input name="remark" />
         <button type="submit"> เพิ่ม</button>
       </form> <br />
-      <h1>--- Subscription ---</h1>
-      {
-        // a == 'true'
-        // ? 'Subscriptions Success'
-        // : 'NO Subscriptions!'
-      }
-    
+      {/* <h1>--- Subscription ---</h1> */}
+      {/* {
+        a == 'true'
+        ? 'Subscriptions Success'
+        : 'NO Subscriptions!'
+      } */}
+
+      <form action={QueryRoomAvailable}>
+      QueryRoomAvailable <br />
+        datetime_in<input type="datetime-local" name="datetime_in" /> <br />
+        datetime_out<input type="datetime-local" name="datetime_out" /> <br />
+        <button type="submit"> ค้นหา</button>
+      </form> <br />
+
     </main>
   )
 }
